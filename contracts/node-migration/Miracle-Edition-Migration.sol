@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// MultiEditionMigration 1.0.0
+// MultiEditionMigration 1.1.1
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
@@ -16,12 +16,14 @@ contract MiracleEditionMigration is PermissionsEnumerable, Multicall, ContractMe
     bool public isWithdrawPaused;
     uint256 public migrationPausedTime;
 
-    mapping(address => uint256[]) public userMigratedTokenIds;
-    mapping(uint256 => bool) public isTokenMigrated;
-    mapping(uint256 => address) public tokenOwner;
+    struct TokenAmount {
+        uint256 tokenId;
+        uint256 amount;
+    }
 
     address[] public migratedUsers;
     mapping(address => bool) public hasUserMigrated;
+    mapping(address => TokenAmount[]) public userMigratedTokenAmounts;
 
     event TokensMigrated(address indexed user, uint256[] tokenIds, uint256[] amounts, uint256 timestamp);
     event MigrationPaused(address indexed admin, uint256 timestamp);
@@ -91,7 +93,6 @@ contract MiracleEditionMigration is PermissionsEnumerable, Multicall, ContractMe
         uint256[] memory tokenIds = new uint256[](3);
         uint256[] memory amounts = new uint256[](3);
 
-        // Check balances and prepare arrays
         uint256 totalBalance = 0;
         for (uint256 i = 0; i < 3; i++) {
             uint256 balance = erc1155Token.balanceOf(msg.sender, i);
@@ -99,22 +100,18 @@ contract MiracleEditionMigration is PermissionsEnumerable, Multicall, ContractMe
                 tokenIds[i] = i;
                 amounts[i] = balance;
                 totalBalance += balance;
+
+                userMigratedTokenAmounts[msg.sender].push(TokenAmount({
+                    tokenId: i,
+                    amount: balance
+                }));
             }
         }
 
-        // Revert if user has no tokens
         require(totalBalance > 0, "No tokens to migrate");
-
-        // Process migration for tokens with non-zero balance
         for (uint256 i = 0; i < 3; i++) {
             if (amounts[i] > 0) {
-                require(!isTokenMigrated[i], "Token already migrated");
-
                 erc1155Token.safeTransferFrom(msg.sender, address(this), i, amounts[i], "");
-
-                isTokenMigrated[i] = true;
-                tokenOwner[i] = msg.sender;
-                userMigratedTokenIds[msg.sender].push(i);
             }
         }
 
@@ -127,22 +124,11 @@ contract MiracleEditionMigration is PermissionsEnumerable, Multicall, ContractMe
     function withdraw() external whenWithdrawActive {
         require(hasUserMigrated[msg.sender], "No tokens to withdraw");
 
-        uint256[] memory tokenIds = userMigratedTokenIds[msg.sender];
-        require(tokenIds.length > 0, "No tokens to withdraw");
-        delete userMigratedTokenIds[msg.sender];
+        TokenAmount[] memory tokenAmounts = userMigratedTokenAmounts[msg.sender];
+        require(tokenAmounts.length > 0, "No tokens to withdraw");
 
-        uint256[] memory amounts = new uint256[](tokenIds.length); // 수량을 저장할 배열
-
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            uint256 tokenId = tokenIds[i];
-            require(tokenOwner[tokenId] == msg.sender, "Not the owner of token");
-
-            erc1155Token.safeTransferFrom(address(this), msg.sender, tokenId, 1, "");
-            amounts[i] = 1; // 각 토큰의 출금 수량 저장
-
-            isTokenMigrated[tokenId] = false;
-            delete tokenOwner[tokenId];
-        }
+        delete userMigratedTokenAmounts[msg.sender];
+        hasUserMigrated[msg.sender] = false;
 
         for (uint256 i = 0; i < migratedUsers.length; i++) {
             if (migratedUsers[i] == msg.sender) {
@@ -151,13 +137,31 @@ contract MiracleEditionMigration is PermissionsEnumerable, Multicall, ContractMe
                 break;
             }
         }
-        hasUserMigrated[msg.sender] = false;
+
+        uint256[] memory tokenIds = new uint256[](tokenAmounts.length);
+        uint256[] memory amounts = new uint256[](tokenAmounts.length);
+
+        for (uint256 i = 0; i < tokenAmounts.length; i++) {
+            TokenAmount memory tokenAmount = tokenAmounts[i];
+            require(
+                erc1155Token.balanceOf(address(this), tokenAmount.tokenId) >= tokenAmount.amount,
+                "Insufficient token balance"
+            );
+            tokenIds[i] = tokenAmount.tokenId;
+            amounts[i] = tokenAmount.amount;
+        }
+
+        for (uint256 i = 0; i < tokenAmounts.length; i++) {
+            erc1155Token.safeTransferFrom(
+                address(this),
+                msg.sender,
+                tokenIds[i],
+                amounts[i],
+                ""
+            );
+        }
 
         emit TokensWithdrawn(msg.sender, tokenIds, amounts, block.timestamp);
-    }
-
-    function getUserMigratedTokens(address user) external view returns (uint256[] memory) {
-        return userMigratedTokenIds[user];
     }
 
     function getTotalMigratedUsers() external view returns (uint256) {
@@ -175,5 +179,10 @@ contract MiracleEditionMigration is PermissionsEnumerable, Multicall, ContractMe
         uint256 pauseTime
     ) {
         return (isMigrationPaused, isWithdrawPaused, migrationPausedTime);
+    }
+
+    function getUserMigratedTokens(address user) external view returns (TokenAmount[] memory) {
+        require(hasUserMigrated[user], "User has not migrated any tokens");
+        return userMigratedTokenAmounts[user];
     }
 }
