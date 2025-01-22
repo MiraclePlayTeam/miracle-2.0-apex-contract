@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@thirdweb-dev/contracts/extension/PermissionsEnumerable.sol";
+import "@thirdweb-dev/contracts/extension/Multicall.sol";
 
-contract MiracleGameEvent is AccessControl {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+contract MiracleGameEvent is PermissionsEnumerable, Multicall {
+    bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
     event RegisterScore(
         uint256 indexed yyyymmdd,
@@ -14,23 +15,15 @@ contract MiracleGameEvent is AccessControl {
     );
 
     constructor() {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
-    }
-
-    function grantAdminRole(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _grantRole(ADMIN_ROLE, account);
-    }
-
-    function revokeAdminRole(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _revokeRole(ADMIN_ROLE, account);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(FACTORY_ROLE, msg.sender);
     }
 
     function registerScore(
         uint256 yyyymmdd,
         string memory _gameUid,
         string memory _scoreData
-    ) external onlyRole(ADMIN_ROLE) {
+    ) external onlyRole(FACTORY_ROLE) {
         require(yyyymmdd >= 19000101 && yyyymmdd <= 99991231, "Invalid date format");
         require(bytes(_gameUid).length > 0, "GameUid cannot be empty");
         require(bytes(_scoreData).length > 0, "ScoreData cannot be empty");
