@@ -1,0 +1,108 @@
+{
+  "name": "Art's N4 Turbo#001",
+  "description": "The first piece in our high-performance racing car NFT collection. This racing car features top-tier performance and design.",
+  "image": "ipfs://QmV1DSs5V438jKs3GgrggrMKU3SMTjAYn74Vh4gK9Gg6eY",
+  "animation_url": "ipfs://QmadMytEQezzoZYxv4DeySeswDT54xpwZFTPNrvBP4qrKw",
+  "external_url": "https://miracleplay.gg",
+  "background_color": "#020202",
+  "attributes": [
+    {
+      "trait_type": "CarModel",
+      "value": "Rally_Car_2B"
+    },
+    {
+      "display_type": "date",
+      "trait_type": "CreatedAt",
+      "value": 1546360800
+    },
+
+    {
+      "trait_type": "TopSpeed",
+      "value": 115
+    },
+    {
+      "trait_type": "Acceleration",
+      "value": 115
+    },
+    {
+      "trait_type": "Handling",
+      "value": 115
+    },
+    {
+      "trait_type": "Draft",
+      "value": 115
+    },
+    {
+      "trait_type": "ImpactAbsorption",
+      "value": 100
+    },
+    {
+      "trait_type": "TrackAdaptation",
+      "value": 100
+    },
+
+    {
+      "display_type": "boost_number",
+      "trait_type": "TopSpeed",
+      "value": 15
+    },
+    {
+      "display_type": "boost_number",
+      "trait_type": "Acceleration",
+      "value": 15
+    },
+    {
+      "display_type": "boost_number",
+      "trait_type": "Handling",
+      "value": 15
+    },
+    {
+      "display_type": "boost_number",
+      "trait_type": "Draft",
+      "value": 15
+    },
+    {
+      "display_type": "boost_number",
+      "trait_type": "ImpactAbsorption",
+      "value": 0
+    },
+    {
+      "display_type": "boost_number",
+      "trait_type": "TrackAdaptation",
+      "value": 0
+    },
+
+    {
+      "display_type": "number",
+      "trait_type": "RacingExperience",
+      "value": 0
+    },
+    {
+      "display_type": "number",
+      "trait_type": "WinPoint",
+      "value": 9
+    },
+    {
+      "Custom": {
+        "carSelection": "car_model_sports.3ds"
+      }
+    },
+    {
+      "InitialSpec":{
+        "TopSpeed":100,
+        "Acceleration":100,
+        "Handling":100,
+        "Draft":100,
+        "ImpactAbsorption":100,
+        "TrackAdaptation":100
+      }
+    },
+    {
+      "AISetting":{
+        "AITrainingData":"13584122001546.h1",
+        "AILastUpdate":"2025-02-06T12:00:00Z",
+        "CustomAIBehavior":"Sharp cornering,defending the opponent's gap,focusing on intuition"
+      }
+    }
+  ]
+}
