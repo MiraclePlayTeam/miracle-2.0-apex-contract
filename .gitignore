@@ -37,7 +37,6 @@ yarn-error.log*
 /notes.txt
 .yalc/
 yalc.lock
-package-lock.json
 yarn.lock
 
 # Forge
@@ -73,7 +72,6 @@ deployArgs.json
 deployArgs.json
 deployArgs.json
 hardhat.config.js
-package.json
 deployArgs.json
 hardhat.config.js
 
