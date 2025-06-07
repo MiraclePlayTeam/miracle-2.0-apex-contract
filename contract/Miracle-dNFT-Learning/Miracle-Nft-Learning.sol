@@ -11,7 +11,7 @@ contract MiracleNftLearning is PermissionsEnumerable, Multicall {
         string indexed contractAddress,
         string indexed gameItemId,
         string tournamentId,
-        uint256 matchId,
+        string matchId,
         string learningData,
         uint256 timestamp
     );
@@ -25,11 +25,12 @@ contract MiracleNftLearning is PermissionsEnumerable, Multicall {
         string memory contractAddress,
         string memory gameItemId,
         string memory tournamentId,
-        uint256 matchId,
+        string memory matchId,
         string memory learningData
     ) external onlyRole(FACTORY_ROLE) {
         require(bytes(contractAddress).length > 0, "contractAddress cannot be empty");
         require(bytes(gameItemId).length > 0, "gameItemId cannot be empty");
+        require(bytes(matchId).length > 0, "matchId cannot be empty");
         require(bytes(tournamentId).length > 0, "tournamentId cannot be empty");
         require(bytes(learningData).length > 0, "learningData cannot be empty");
         
