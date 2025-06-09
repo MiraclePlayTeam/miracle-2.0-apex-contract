@@ -28,7 +28,7 @@ npx thirdweb install
 yarn install or npm install
 ```
 
-### 2. API 키 등록
+### 3. API 키 등록
 
 1. ThirdWeb 대시보드에서 API 키를 발급받습니다.
 2. 터미널에서 다음 명령어를 실행하여 API 키를 환경변수로 등록합니다:
@@ -38,7 +38,7 @@ echo 'export THIRDWEB_API_KEY="your_api_key_here"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### 3. 컨트랙트 배포
+### 4. 컨트랙트 배포
 
 ```bash
 yarn contract ./contract/{폴더명}
