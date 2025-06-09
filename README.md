@@ -14,7 +14,9 @@
 
 ## 4. Miracle Token to Token Swap
 
-## ThirdWeb 설정 및 컨트랙트 배포
+> EOA
+
+## 5. ThirdWeb 설정 및 컨트랙트 배포
 
 ### 1. ThirdWeb CLI 설치
 
