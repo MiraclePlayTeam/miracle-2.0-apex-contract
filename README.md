@@ -35,7 +35,7 @@ source ~/.zshrc
 ### 3. 컨트랙트 배포
 
 ```bash
-yarn contract
+yarn contract ./contract/{폴더명}
 ```
 
 > 💡 **참고사항**
