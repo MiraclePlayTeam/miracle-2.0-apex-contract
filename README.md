@@ -22,6 +22,12 @@
 npx thirdweb install
 ```
 
+### 2. yarn 또는 npm install
+
+```bash
+yarn install or npm install
+```
+
 ### 2. API 키 등록
 
 1. ThirdWeb 대시보드에서 API 키를 발급받습니다.
