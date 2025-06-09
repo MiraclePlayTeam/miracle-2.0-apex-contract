@@ -14,40 +14,42 @@
 
 ## 4. Miracle Token to Token Swap
 
-> EOA
+> EOA (Externally Owned Account)
 
-## 5. ThirdWeb 설정 및 컨트랙트 배포
+## 5. ThirdWeb Setup and Contract Deployment
 
-### 1. ThirdWeb CLI 설치
+### 1. Install ThirdWeb CLI
 
 ```bash
 npx thirdweb install
 ```
 
-### 2. yarn 또는 npm install
+### 2. Install Dependencies
 
 ```bash
-yarn install or npm install
+yarn install
+# or
+npm install
 ```
 
-### 3. API 키 등록
+### 3. Configure API Key
 
-1. ThirdWeb 대시보드에서 API 키를 발급받습니다.
-2. 터미널에서 다음 명령어를 실행하여 API 키를 환경변수로 등록합니다:
+1. Obtain your API key from the ThirdWeb dashboard
+2. Set up your API key as an environment variable:
 
 ```bash
 echo 'export THIRDWEB_API_KEY="your_api_key_here"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-### 4. 컨트랙트 배포
+### 4. Deploy Contract
 
 ```bash
-yarn contract ./contract/{폴더명}
+yarn contract ./contract/{folder_name}
 ```
 
-> 💡 **참고사항**
+> 💡 **Important Notes**
 >
-> - API 키는 반드시 안전하게 보관하세요.
-> - 환경변수 등록 후에는 터미널을 재시작하거나 `source ~/.zshrc` 명령어를 실행해야 합니다.
-> - 컨트랙트 배포 전에 모든 설정이 올바르게 되어있는지 확인하세요.
+> - Keep your API key secure and never share it
+> - Restart your terminal or run `source ~/.zshrc` after setting environment variables
+> - Verify all configurations before deploying your contract
