@@ -40,7 +40,6 @@ contract MiracleGovernance is PermissionsEnumerable {
 
   mapping(uint256 => Proposal) public proposals;
   mapping(uint256 => mapping(address => uint256)) public userVotes;
-  uint256 public nextProposalId;
 
   event ProposalCreated(
     uint256 indexed proposalId,
@@ -57,7 +56,6 @@ contract MiracleGovernance is PermissionsEnumerable {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     _setupRole(FACTORY_ROLE, msg.sender);
     Token = IERC20(_token);
-    nextProposalId = 1;
   }
 
   modifier onlyActiveProposal(uint256 _proposalId) {
@@ -73,18 +71,17 @@ contract MiracleGovernance is PermissionsEnumerable {
   // Write Functions
 
   function createProposal(
+    uint256 _proposalId,
     uint256 _startTime,
     uint256 _endTime
-  ) external onlyRole(FACTORY_ROLE) returns (uint256) {
+  ) external onlyRole(FACTORY_ROLE) {
     require(_startTime >= block.timestamp, "Invalid start time");
     require(_endTime > _startTime, "Invalid end time");
+    require(_proposalId > 0, "Invalid proposal ID");
+    require(proposals[_proposalId].id == 0, "Proposal ID already exists");
 
-    // Generate unique proposal ID using nextProposalId.
-    uint256 proposalId = nextProposalId++;
-    // Note: nextProposalId ensures unique proposal IDs, so no additional check for ID uniqueness is required.
-
-    proposals[proposalId] = Proposal({
-      id: proposalId,
+    proposals[_proposalId] = Proposal({
+      id: _proposalId,
       startTime: _startTime,
       endTime: _endTime,
       creator: msg.sender,
@@ -96,8 +93,7 @@ contract MiracleGovernance is PermissionsEnumerable {
       isPassed: false
     });
 
-    emit ProposalCreated(proposalId, msg.sender, _startTime, _endTime);
-    return proposalId;
+    emit ProposalCreated(_proposalId, msg.sender, _startTime, _endTime);
   }
 
   function vote(
