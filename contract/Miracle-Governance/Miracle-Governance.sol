@@ -160,15 +160,16 @@ contract MiracleGovernance is PermissionsEnumerable {
 
   // Read Functions
 
-  function getProposalInfo(
-    uint256 _proposalId
-  )
-    external
-    view
-    returns (uint256 id, uint256 startTime, uint256 endTime, address creator, bool isActive)
-  {
+  function getProposalInfo(uint256 _proposalId) external view returns (GeneralInfo memory) {
     Proposal memory proposal = proposals[_proposalId];
-    return (proposal.id, proposal.startTime, proposal.endTime, proposal.creator, proposal.isActive);
+    require(proposal.id != 0, "Proposal does not exist");
+    GeneralInfo memory info;
+    info.id = proposal.id;
+    info.startTime = proposal.startTime;
+    info.endTime = proposal.endTime;
+    info.creator = proposal.creator;
+    info.isActive = proposal.isActive;
+    return info;
   }
 
   function getVoteCounts(
