@@ -25,6 +25,13 @@ contract MiracleGovernance is PermissionsEnumerable {
     ABSTAIN
   }
 
+  enum ProposalResult {
+    UNKNOWN,
+    PASSED,
+    REJECTED,
+    TIED
+  }
+
   struct Proposal {
     uint256 id;
     uint256 startTime;
@@ -35,7 +42,7 @@ contract MiracleGovernance is PermissionsEnumerable {
     uint256 againstVotes;
     uint256 abstainVotes;
     address[] participants;
-    bool isPassed;
+    ProposalResult result;
   }
 
   mapping(uint256 => Proposal) public proposals;
@@ -50,7 +57,7 @@ contract MiracleGovernance is PermissionsEnumerable {
   event Voted(uint256 indexed proposalId, address voter, VoteType voteType, uint256 amount);
   event ProposalCancelled(uint256 indexed proposalId, address canceller);
   event ProposalForceCancelled(uint256 indexed proposalId, address admin);
-  event ProposalEnded(uint256 indexed proposalId, address admin);
+  event ProposalEnded(uint256 indexed proposalId, address admin, ProposalResult result);
 
   constructor(address _token) {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -91,7 +98,7 @@ contract MiracleGovernance is PermissionsEnumerable {
       againstVotes: 0,
       abstainVotes: 0,
       participants: new address[](0),
-      isPassed: false
+      result: ProposalResult.UNKNOWN
     });
 
     emit ProposalCreated(_proposalId, _creator, _startTime, _endTime);
@@ -162,8 +169,16 @@ contract MiracleGovernance is PermissionsEnumerable {
     require(proposal.isActive, "Proposal not active");
     require(block.timestamp > proposal.endTime, "Proposal not ended");
 
+    if (proposal.forVotes > proposal.againstVotes) {
+      proposal.result = ProposalResult.PASSED;
+    } else if (proposal.forVotes < proposal.againstVotes) {
+      proposal.result = ProposalResult.REJECTED;
+    } else {
+      proposal.result = ProposalResult.TIED;
+    }
+
     proposal.isActive = false;
-    emit ProposalEnded(_proposalId, msg.sender);
+    emit ProposalEnded(_proposalId, msg.sender, proposal.result);
   }
 
   // Read Functions
@@ -177,6 +192,7 @@ contract MiracleGovernance is PermissionsEnumerable {
     info.endTime = proposal.endTime;
     info.creator = proposal.creator;
     info.isActive = proposal.isActive;
+    info.result = proposal.result;
     return info;
   }
 
@@ -193,6 +209,7 @@ contract MiracleGovernance is PermissionsEnumerable {
     uint256 endTime;
     address creator;
     bool isActive;
+    ProposalResult result;
   }
 
   function getParticipants(uint256 _proposalId) external view returns (address[] memory) {
