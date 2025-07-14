@@ -24,6 +24,7 @@ contract MiracleNodeRewardRate is PermissionsEnumerable, Multicall, ContractMeta
     uint256 lastUpdateTime;
   }
   mapping(uint256 => mapping(address => RewardRate)) public rewardRates;
+  mapping(uint256 => address[]) public yearMonthUsers;
 
   event RewardRateSet(
     address indexed user,
@@ -77,6 +78,8 @@ contract MiracleNodeRewardRate is PermissionsEnumerable, Multicall, ContractMeta
       lastUpdateTime: block.timestamp
     });
 
+    yearMonthUsers[_yearMonth].push(msg.sender);
+
     emit RewardRateSet(msg.sender, _yearMonth, _rewardRate, block.timestamp);
   }
 
@@ -99,5 +102,21 @@ contract MiracleNodeRewardRate is PermissionsEnumerable, Multicall, ContractMeta
     }
 
     return totalNodeCount > 0 && rewardRates[_yearMonth][_user].rate == 0;
+  }
+
+  function getAverageRewardRate(uint256 _yearMonth) external view returns (uint256) {
+    uint256 totalNodeCount = 0;
+    uint256 totalRewardRate = 0;
+    address[] memory users = yearMonthUsers[_yearMonth];
+
+    for (uint256 i = 0; i < users.length; i++) {
+      address user = users[i];
+      totalNodeCount += rewardRates[_yearMonth][user].nodeCount;
+      totalRewardRate +=
+        rewardRates[_yearMonth][user].rate *
+        rewardRates[_yearMonth][user].nodeCount;
+    }
+
+    return totalNodeCount > 0 ? totalRewardRate / totalNodeCount : 0;
   }
 }
