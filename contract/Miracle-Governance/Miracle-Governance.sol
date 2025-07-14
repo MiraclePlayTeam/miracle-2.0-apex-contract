@@ -3,6 +3,7 @@ pragma solidity ^0.8.23;
 
 import "@thirdweb-dev/contracts/extension/PermissionsEnumerable.sol";
 import "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
+import "@thirdweb-dev/contracts/extension/Multicall.sol";
 
 interface IERC20 {
   function totalSupply() external view returns (uint256);
@@ -14,7 +15,7 @@ interface IERC20 {
   function burnFrom(address account, uint256 amount) external returns (bool);
 }
 
-contract MiracleGovernance is PermissionsEnumerable {
+contract MiracleGovernance is PermissionsEnumerable, Multicall {
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
   IERC20 public immutable Token;
