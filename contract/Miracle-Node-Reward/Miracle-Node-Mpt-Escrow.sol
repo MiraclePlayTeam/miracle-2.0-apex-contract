@@ -152,4 +152,14 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
 
     return (_escrowers, _escrowAmounts);
   }
+
+  function isAvailableEscrow(address _escrower) external view returns (bool) {
+    TokenAmount[] memory migratedTokens = getMigratedTokens(_escrower);
+    uint256 totalNodeCount = 0;
+    for (uint256 i = 0; i < migratedTokens.length; i++) {
+      totalNodeCount += migratedTokens[i].amount;
+    }
+
+    return totalNodeCount > 0 && escrowings[_escrower].escrowAmount == 0;
+  }
 }
