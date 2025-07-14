@@ -50,7 +50,7 @@ contract MiracleGovernance is PermissionsEnumerable {
   event Voted(uint256 indexed proposalId, address voter, VoteType voteType, uint256 amount);
   event ProposalCancelled(uint256 indexed proposalId, address canceller);
   event ProposalForceCancelled(uint256 indexed proposalId, address admin);
-  event ProposalEnded(uint256 indexed proposalId);
+  event ProposalEnded(uint256 indexed proposalId, address admin);
 
   constructor(address _token) {
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -73,7 +73,8 @@ contract MiracleGovernance is PermissionsEnumerable {
   function createProposal(
     uint256 _proposalId,
     uint256 _startTime,
-    uint256 _endTime
+    uint256 _endTime,
+    address _creator
   ) external onlyRole(FACTORY_ROLE) {
     require(_startTime >= block.timestamp, "Invalid start time");
     require(_endTime > _startTime, "Invalid end time");
@@ -84,7 +85,7 @@ contract MiracleGovernance is PermissionsEnumerable {
       id: _proposalId,
       startTime: _startTime,
       endTime: _endTime,
-      creator: msg.sender,
+      creator: _creator,
       isActive: true,
       forVotes: 0,
       againstVotes: 0,
@@ -93,26 +94,25 @@ contract MiracleGovernance is PermissionsEnumerable {
       isPassed: false
     });
 
-    emit ProposalCreated(_proposalId, msg.sender, _startTime, _endTime);
+    emit ProposalCreated(_proposalId, _creator, _startTime, _endTime);
   }
 
   function vote(
     uint256 _proposalId,
     VoteType _voteType,
-    uint256 _amount
+    uint256 _amount,
+    address _voter
   ) external onlyActiveProposal(_proposalId) {
     require(_amount > 0, "Amount must be > 0");
 
-    // Check allowance and balance
-    uint256 allowance = Token.allowance(msg.sender, address(this));
+    uint256 allowance = Token.allowance(_voter, address(this));
     require(allowance >= _amount, "Insufficient allowance");
-    uint256 balance = Token.balanceOf(msg.sender);
+    uint256 balance = Token.balanceOf(_voter);
     require(balance >= _amount, "Insufficient token balance");
 
-    bool burnSuccess = Token.burnFrom(msg.sender, _amount);
+    bool burnSuccess = Token.burnFrom(_voter, _amount);
     require(burnSuccess, "Token burn failed");
 
-    // Update vote counts
     Proposal storage proposal = proposals[_proposalId];
     if (_voteType == VoteType.FOR) {
       proposal.forVotes += _amount;
@@ -122,20 +122,32 @@ contract MiracleGovernance is PermissionsEnumerable {
       proposal.abstainVotes += _amount;
     }
 
-    // Update user vote record
-    if (userVotes[_proposalId][msg.sender] == 0) {
-      proposal.participants.push(msg.sender);
+    if (userVotes[_proposalId][_voter] == 0) {
+      proposal.participants.push(_voter);
     }
-    userVotes[_proposalId][msg.sender] += _amount;
+    userVotes[_proposalId][_voter] += _amount;
 
-    emit Voted(_proposalId, msg.sender, _voteType, _amount);
+    emit Voted(_proposalId, _voter, _voteType, _amount);
   }
 
-  function cancelVote(uint256 _proposalId) external onlyActiveProposal(_proposalId) {
-    require(userVotes[_proposalId][msg.sender] > 0, "No votes to cancel");
+  function cancelVote(
+    uint256 _proposalId,
+    address _voter
+  ) external onlyActiveProposal(_proposalId) {
+    require(userVotes[_proposalId][_voter] > 0, "No votes to cancel");
 
-    userVotes[_proposalId][msg.sender] = 0;
-    emit ProposalCancelled(_proposalId, msg.sender);
+    userVotes[_proposalId][_voter] = 0;
+    emit ProposalCancelled(_proposalId, _voter);
+  }
+
+  function cancelProposal(
+    uint256 _proposalId,
+    address _canceller
+  ) external onlyActiveProposal(_proposalId) {
+    require(proposals[_proposalId].isActive, "Proposal not active");
+    require(proposals[_proposalId].creator == _canceller, "Not proposal creator");
+    proposals[_proposalId].isActive = false;
+    emit ProposalCancelled(_proposalId, _canceller);
   }
 
   function forceCancelProposal(uint256 _proposalId) external onlyRole(FACTORY_ROLE) {
@@ -151,7 +163,7 @@ contract MiracleGovernance is PermissionsEnumerable {
     require(block.timestamp > proposal.endTime, "Proposal not ended");
 
     proposal.isActive = false;
-    emit ProposalEnded(_proposalId);
+    emit ProposalEnded(_proposalId, msg.sender);
   }
 
   // Read Functions
