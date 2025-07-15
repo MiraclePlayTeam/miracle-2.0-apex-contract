@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.26;
+pragma solidity ^0.8.23;
 
 import "@thirdweb-dev/contracts/extension/PermissionsEnumerable.sol";
 import "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
@@ -20,9 +20,9 @@ contract MiracleGovernance is PermissionsEnumerable {
   IERC20 public immutable Token;
 
   enum VoteType {
-    AGAINST,
     FOR,
-    ABSTAIN
+    AGAINST,
+    NEUTRAL
   }
 
   enum ProposalResult {
@@ -40,7 +40,7 @@ contract MiracleGovernance is PermissionsEnumerable {
     bool isActive;
     uint256 forVotes;
     uint256 againstVotes;
-    uint256 abstainVotes;
+    uint256 neutralVotes;
     address[] participants;
     ProposalResult result;
   }
@@ -77,12 +77,7 @@ contract MiracleGovernance is PermissionsEnumerable {
 
   // Write Functions
 
-  function createProposal(
-    uint256 _proposalId,
-    uint256 _startTime,
-    uint256 _endTime,
-    address _creator
-  ) external onlyRole(FACTORY_ROLE) {
+  function createProposal(uint256 _proposalId, uint256 _startTime, uint256 _endTime) external {
     require(_startTime >= block.timestamp, "Invalid start time");
     require(_endTime > _startTime, "Invalid end time");
     require(_proposalId > 0, "Invalid proposal ID");
@@ -92,32 +87,31 @@ contract MiracleGovernance is PermissionsEnumerable {
       id: _proposalId,
       startTime: _startTime,
       endTime: _endTime,
-      creator: _creator,
+      creator: msg.sender,
       isActive: true,
       forVotes: 0,
       againstVotes: 0,
-      abstainVotes: 0,
+      neutralVotes: 0,
       participants: new address[](0),
       result: ProposalResult.UNKNOWN
     });
 
-    emit ProposalCreated(_proposalId, _creator, _startTime, _endTime);
+    emit ProposalCreated(_proposalId, msg.sender, _startTime, _endTime);
   }
 
   function vote(
     uint256 _proposalId,
     VoteType _voteType,
-    uint256 _amount,
-    address _voter
+    uint256 _amount
   ) external onlyActiveProposal(_proposalId) {
     require(_amount > 0, "Amount must be > 0");
 
-    uint256 allowance = Token.allowance(_voter, address(this));
+    uint256 allowance = Token.allowance(msg.sender, address(this));
     require(allowance >= _amount, "Insufficient allowance");
-    uint256 balance = Token.balanceOf(_voter);
+    uint256 balance = Token.balanceOf(msg.sender);
     require(balance >= _amount, "Insufficient token balance");
 
-    bool burnSuccess = Token.burnFrom(_voter, _amount);
+    bool burnSuccess = Token.burnFrom(msg.sender, _amount);
     require(burnSuccess, "Token burn failed");
 
     Proposal storage proposal = proposals[_proposalId];
@@ -126,35 +120,30 @@ contract MiracleGovernance is PermissionsEnumerable {
     } else if (_voteType == VoteType.AGAINST) {
       proposal.againstVotes += _amount;
     } else {
-      proposal.abstainVotes += _amount;
+      proposal.neutralVotes += _amount;
     }
 
-    if (userVotes[_proposalId][_voter] == 0) {
-      proposal.participants.push(_voter);
+    if (userVotes[_proposalId][msg.sender] == 0) {
+      proposal.participants.push(msg.sender);
     }
-    userVotes[_proposalId][_voter] += _amount;
+    userVotes[_proposalId][msg.sender] += _amount;
 
-    emit Voted(_proposalId, _voter, _voteType, _amount);
+    emit Voted(_proposalId, msg.sender, _voteType, _amount);
   }
 
-  function cancelVote(
-    uint256 _proposalId,
-    address _voter
-  ) external onlyActiveProposal(_proposalId) {
-    require(userVotes[_proposalId][_voter] > 0, "No votes to cancel");
+  function cancelVote(uint256 _proposalId) external onlyActiveProposal(_proposalId) {
+    require(userVotes[_proposalId][msg.sender] > 0, "No votes to cancel");
 
-    userVotes[_proposalId][_voter] = 0;
-    emit ProposalCancelled(_proposalId, _voter);
+    userVotes[_proposalId][msg.sender] = 0;
+    emit ProposalCancelled(_proposalId, msg.sender);
   }
 
-  function cancelProposal(
-    uint256 _proposalId,
-    address _canceller
-  ) external onlyActiveProposal(_proposalId) {
+  // @warning: this function won't be used in the first version of the contract.
+  function cancelProposal(uint256 _proposalId) external onlyActiveProposal(_proposalId) {
     require(proposals[_proposalId].isActive, "Proposal not active");
-    require(proposals[_proposalId].creator == _canceller, "Not proposal creator");
+    require(proposals[_proposalId].creator == msg.sender, "Not proposal creator");
     proposals[_proposalId].isActive = false;
-    emit ProposalCancelled(_proposalId, _canceller);
+    emit ProposalCancelled(_proposalId, msg.sender);
   }
 
   function forceCancelProposal(uint256 _proposalId) external onlyRole(FACTORY_ROLE) {
@@ -198,9 +187,9 @@ contract MiracleGovernance is PermissionsEnumerable {
 
   function getVoteCounts(
     uint256 _proposalId
-  ) external view returns (uint256 forVotes, uint256 againstVotes, uint256 abstainVotes) {
+  ) external view returns (uint256 forVotes, uint256 againstVotes, uint256 neutralVotes) {
     Proposal memory proposal = proposals[_proposalId];
-    return (proposal.forVotes, proposal.againstVotes, proposal.abstainVotes);
+    return (proposal.forVotes, proposal.againstVotes, proposal.neutralVotes);
   }
 
   struct GeneralInfo {
