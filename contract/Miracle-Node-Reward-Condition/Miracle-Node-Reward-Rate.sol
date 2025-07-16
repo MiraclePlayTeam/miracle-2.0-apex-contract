@@ -14,6 +14,10 @@ interface MiracleEditionMigration {
   function getUserMigratedTokens(address _user) external view returns (TokenAmount[] memory);
 }
 
+// @title Miracle Node Reward Rate
+// @author Miracle
+// @notice This contract is used to set reward rate for each user
+// @CreatedAt 2025-07-16
 contract MiracleNodeRewardRate is PermissionsEnumerable, Multicall, ContractMetadata {
   address public deployer;
   MiracleEditionMigration public miracleEditionMigration;

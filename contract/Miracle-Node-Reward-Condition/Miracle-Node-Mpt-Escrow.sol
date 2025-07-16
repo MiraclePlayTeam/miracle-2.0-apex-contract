@@ -22,6 +22,10 @@ interface IERC20 {
   function transferFrom(address from, address to, uint256 amount) external returns (bool);
 }
 
+// @title Miracle Node Mpt Escrow And Reward Condition
+// @author Miracle
+// @notice This contract is used to escrow MPT and reward condition
+// @CreatedAt 2025-07-16
 contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetadata {
   IERC20 public immutable Token;
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
