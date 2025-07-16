@@ -77,7 +77,7 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     miracleEditionMigration = MiracleEditionMigration(_miracleEditionMigration);
   }
 
-  function setPerNodeMptBalance(uint256 _perNodeMptBalance) external onlyRole(FACTORY_ROLE) {
+  function setPerNodeMptBalance(uint256 _perNodeMptBalance) external onlyRole(DEFAULT_ADMIN_ROLE) {
     perNodeMptBalance = _perNodeMptBalance;
   }
 
@@ -158,16 +158,16 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     return totalEscrowAmount;
   }
 
+  function getTotalEscrowers() external view returns (uint256) {
+    return escrowers.length;
+  }
+
   function getEscrower(address _escrower) external view returns (uint256, uint256) {
     return (escrowings[_escrower].escrowAmount, escrowings[_escrower].lastUpdateTime);
   }
 
-  function getEscrowerBalance(address _escrower) external view returns (uint256) {
+  function getEscrowAmount(address _escrower) external view returns (uint256) {
     return escrowings[_escrower].escrowAmount;
-  }
-
-  function getTotalEscrowers() external view returns (uint256) {
-    return escrowers.length;
   }
 
   function getEscrowersBatch(
