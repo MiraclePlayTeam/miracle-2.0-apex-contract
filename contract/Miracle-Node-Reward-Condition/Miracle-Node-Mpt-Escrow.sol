@@ -25,11 +25,11 @@ interface IERC20 {
 contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetadata {
   IERC20 public immutable Token;
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
-  uint256 private constant MONTH = 30 days; // 30 days = 2592000 seconds
 
   address public deployer;
   uint256 public totalEscrowAmount;
   uint256 public perNodeMptBalance;
+  uint256 public lockTime; // 초 단위 (예: 30 days = 2592000 seconds)
   MiracleEditionMigration public miracleEditionMigration;
 
   struct Escrower {
@@ -49,15 +49,18 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     address _deployer,
     address _miracleEditionMigration,
     address _token,
-    uint256 _perNodeMptBalance
+    uint256 _perNodeMptBalance,
+    uint256 _lockTime
   ) {
-    deployer = _deployer;
-    _setupRole(DEFAULT_ADMIN_ROLE, _deployer);
-    _setupRole(FACTORY_ROLE, _deployer);
     _setupContractURI(_contractURI);
+    deployer = _deployer;
     miracleEditionMigration = MiracleEditionMigration(_miracleEditionMigration);
     Token = IERC20(_token);
     perNodeMptBalance = _perNodeMptBalance;
+    lockTime = _lockTime;
+
+    _setupRole(DEFAULT_ADMIN_ROLE, _deployer);
+    _setupRole(FACTORY_ROLE, _deployer);
   }
 
   function _canSetContractURI() internal view virtual override returns (bool) {
@@ -72,6 +75,10 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
 
   function setPerNodeMptBalance(uint256 _perNodeMptBalance) external onlyRole(FACTORY_ROLE) {
     perNodeMptBalance = _perNodeMptBalance;
+  }
+
+  function setLockTime(uint256 _lockTime) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    lockTime = _lockTime;
   }
 
   function getMigratedTokens(address _user) private view returns (TokenAmount[] memory) {
@@ -126,7 +133,11 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
   function withdraw() external {
     uint256 withdrawAmount = escrowings[msg.sender].escrowAmount;
     require(withdrawAmount > 0, "Not enough balance");
-    require(block.timestamp - escrowings[msg.sender].lastUpdateTime >= MONTH, "Must wait 30 days");
+    require(
+      block.timestamp - escrowings[msg.sender].lastUpdateTime >= lockTime,
+      string(abi.encodePacked("Must wait ", Strings.toString(lockTime / 1 days), " days"))
+    );
+    require(Token.balanceOf(address(this)) >= withdrawAmount, "Insufficient contract balance");
 
     escrowings[msg.sender].escrowAmount = 0;
     if (escrowings[msg.sender].escrowAmount == 0) {
