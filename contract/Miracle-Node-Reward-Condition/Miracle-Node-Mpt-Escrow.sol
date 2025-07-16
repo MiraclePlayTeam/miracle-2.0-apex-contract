@@ -14,7 +14,16 @@ interface MiracleEditionMigration {
   function getUserMigratedTokens(address _user) external view returns (TokenAmount[] memory);
 }
 
+interface IERC20 {
+  function totalSupply() external view returns (uint256);
+  function balanceOf(address account) external view returns (uint256);
+  function allowance(address owner, address spender) external view returns (uint256);
+  function transfer(address to, uint256 amount) external returns (bool);
+  function transferFrom(address from, address to, uint256 amount) external returns (bool);
+}
+
 contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetadata {
+  IERC20 public immutable Token;
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
   uint256 private constant MONTH = 30 days; // 30 days = 2592000 seconds
 
@@ -32,13 +41,14 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
   address[] public escrowers;
   mapping(address => Escrower) public escrowings;
 
-  event Escrow(address indexed escrower, uint256 amount);
-  event Withdraw(address indexed escrower, uint256 amount);
+  event EscrowEvent(address indexed escrower, uint256 amount);
+  event WithdrawEvent(address indexed escrower, uint256 amount);
 
   constructor(
     string memory _contractURI,
     address _deployer,
     address _miracleEditionMigration,
+    address _token,
     uint256 _perNodeMptBalance
   ) {
     deployer = _deployer;
@@ -46,6 +56,7 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     _setupRole(FACTORY_ROLE, _deployer);
     _setupContractURI(_contractURI);
     miracleEditionMigration = MiracleEditionMigration(_miracleEditionMigration);
+    Token = IERC20(_token);
     perNodeMptBalance = _perNodeMptBalance;
   }
 
@@ -74,50 +85,58 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     return migratedTokens;
   }
 
-  function escrow() external payable {
-    require(msg.value > 0, "Must escrow non-zero amount");
-
-    TokenAmount[] memory migratedTokens = getMigratedTokens(msg.sender);
-    uint256 totalMigratedAmount = 0;
-    for (uint256 i = 0; i < migratedTokens.length; i++) {
-      totalMigratedAmount += migratedTokens[i].amount * perNodeMptBalance;
-    }
-    require(msg.value >= totalMigratedAmount, "Must escrow more than total migrated amount");
-
-    if (escrowings[msg.sender].escrowAmount == 0) {
-      escrowerIndex[msg.sender] = escrowers.length;
-      escrowers.push(msg.sender);
-    }
-
-    escrowings[msg.sender].escrowAmount += msg.value;
-    escrowings[msg.sender].lastUpdateTime = block.timestamp;
-    totalEscrowAmount += msg.value;
-
-    emit Escrow(msg.sender, msg.value);
-  }
-
-  function withdraw(uint256 amount) external {
-    require(escrowings[msg.sender].escrowAmount >= amount, "Not enough balance");
-    require(block.timestamp - escrowings[msg.sender].lastUpdateTime >= MONTH, "Must wait 30 days");
-
-    escrowings[msg.sender].escrowAmount -= amount;
-    if (escrowings[msg.sender].escrowAmount == 0) {
-      removeEscrower(msg.sender);
-    }
-    totalEscrowAmount -= amount;
-
-    (bool success, ) = msg.sender.call{ value: amount }("");
-    require(success, "Transfer failed");
-
-    emit Withdraw(msg.sender, amount);
-  }
-
   function removeEscrower(address _escrower) private {
     uint256 index = escrowerIndex[_escrower];
     escrowers[index] = escrowers[escrowers.length - 1];
     escrowerIndex[escrowers[index]] = index;
     escrowers.pop();
     delete escrowerIndex[_escrower];
+  }
+
+  function escrow() external {
+    require(Token.balanceOf(msg.sender) > 0, "Must escrow non-zero amount");
+
+    TokenAmount[] memory migratedTokens = getMigratedTokens(msg.sender);
+    uint256 totalMigratedAmount = 0;
+    for (uint256 i = 0; i < migratedTokens.length; i++) {
+      totalMigratedAmount += migratedTokens[i].amount * perNodeMptBalance;
+    }
+    require(
+      Token.balanceOf(msg.sender) >= totalMigratedAmount,
+      "Must escrow more than total migrated amount"
+    );
+
+    uint256 allowance = Token.allowance(msg.sender, address(this));
+    require(allowance >= totalMigratedAmount, "Insufficient allowance");
+
+    if (escrowings[msg.sender].escrowAmount == 0) {
+      escrowerIndex[msg.sender] = escrowers.length;
+      escrowers.push(msg.sender);
+    }
+
+    escrowings[msg.sender].escrowAmount += totalMigratedAmount;
+    escrowings[msg.sender].lastUpdateTime = block.timestamp;
+    totalEscrowAmount += totalMigratedAmount;
+
+    Token.transferFrom(msg.sender, address(this), totalMigratedAmount);
+
+    emit EscrowEvent(msg.sender, totalMigratedAmount);
+  }
+
+  function withdraw() external {
+    uint256 withdrawAmount = escrowings[msg.sender].escrowAmount;
+    require(withdrawAmount > 0, "Not enough balance");
+    require(block.timestamp - escrowings[msg.sender].lastUpdateTime >= MONTH, "Must wait 30 days");
+
+    escrowings[msg.sender].escrowAmount = 0;
+    if (escrowings[msg.sender].escrowAmount == 0) {
+      removeEscrower(msg.sender);
+    }
+    totalEscrowAmount -= withdrawAmount;
+
+    Token.transfer(msg.sender, withdrawAmount);
+
+    emit WithdrawEvent(msg.sender, withdrawAmount);
   }
 
   function getTotalEscrowAmount() external view returns (uint256) {
@@ -153,7 +172,7 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     return (_escrowers, _escrowAmounts);
   }
 
-  function getRequiredEscrowAmount(address _escrower) external view returns (uint256) {
+  function getRequiredEscrowAmount(address _escrower) public view returns (uint256) {
     TokenAmount[] memory migratedTokens = getMigratedTokens(_escrower);
     uint256 totalNodeCount = 0;
     for (uint256 i = 0; i < migratedTokens.length; i++) {
@@ -170,6 +189,6 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
       totalNodeCount += migratedTokens[i].amount;
     }
 
-    return totalNodeCount > 0 && escrowings[_escrower].escrowAmount == 0;
+    return totalNodeCount > 0 && Token.balanceOf(_escrower) >= getRequiredEscrowAmount(_escrower);
   }
 }
