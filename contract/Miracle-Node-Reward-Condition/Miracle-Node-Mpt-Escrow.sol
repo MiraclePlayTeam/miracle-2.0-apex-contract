@@ -197,6 +197,15 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     return totalNodeCount * perNodeMptBalance;
   }
 
+  function isWithdrawable(address _escrower) external view returns (bool) {
+    uint256 withdrawAmount = escrowings[_escrower].escrowAmount;
+    uint256 timeSinceLastUpdate = block.timestamp - escrowings[_escrower].lastUpdateTime;
+
+    return
+      timeSinceLastUpdate >= lockTime &&
+      withdrawAmount > 0;
+  }
+
   function isAvailableEscrow(address _escrower) external view returns (bool) {
     TokenAmount[] memory migratedTokens = getMigratedTokens(_escrower);
     uint256 totalNodeCount = 0;
@@ -204,6 +213,12 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
       totalNodeCount += migratedTokens[i].amount;
     }
 
-    return totalNodeCount > 0 && Token.balanceOf(_escrower) >= getRequiredEscrowAmount(_escrower);
+    uint256 requiredEscrowAmount = getRequiredEscrowAmount(_escrower);
+    uint256 withdrawAmount = escrowings[_escrower].escrowAmount;
+
+    return
+      totalNodeCount > 0 &&
+      Token.balanceOf(_escrower) >= requiredEscrowAmount &&
+      withdrawAmount == 0;
   }
 }
