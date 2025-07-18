@@ -71,13 +71,22 @@ contract MiracleNodeRewardClaimRate is PermissionsEnumerable, Multicall, Contrac
   }
 
   /**
-   * @notice 해당 날짜(_yearMonth)에 비율 등록이 가능한지 확인 (내부용)
+   * @notice 노드를 가지고 있는 유저가 해당 날짜(_yearMonth)에 비율 등록이 가능한지 확인
    * @param _yearMonth 예: 202407
    * @param _user 예: 0x1234567890123456789012345678901234567890
    * @return 등록 가능하면 true, 이미 등록되어 있으면 false
    */
-  function _canRegister(uint256 _yearMonth, address _user) public view returns (bool) {
-    return rewardRateInfo[_yearMonth][_user].lastUpdateTime == 0;
+  function canRegisterRewardRate(uint256 _yearMonth, address _user) public view returns (bool) {
+    // 이미 등록한 이력이 있으면 false
+    if (rewardRateInfo[_yearMonth][_user].lastUpdateTime != 0) {
+      return false;
+    }
+
+    // 유저가 보유하고 있는 노드 총 개수 조회
+    uint256 userTotalNodeCount = getUserTotalNodeCount(_user);
+
+    // 노드가 1개 이상 있어야 true
+    return userTotalNodeCount > 0;
   }
 
   /**
@@ -123,26 +132,37 @@ contract MiracleNodeRewardClaimRate is PermissionsEnumerable, Multicall, Contrac
   }
 
   /**
-   * @notice 날짜(_yearMonth)와 비율(rate)을 등록
-   * @param _yearMonth 예: 202407
-   * @param _rate 등록할 비율 값
+   * @notice 유저가 보유하고 있는 노드 총 개수 조회
+   * @param _user 예: 0x1234567890123456789012345678901234567890
+   * @return uint256 유저가 보유하고 있는 노드 총 개수
    */
-  function registerRewardRate(uint256 _yearMonth, uint256 _rate) external {
-    // 이미 등록한 이력이 있으면 등록불가
-    require(_canRegister(_yearMonth, msg.sender), "Already registered");
-    // 비율은 최대 비율을 초과할 수 없음
-    require(_rate <= maxRewardRate, "Reward rate must be less than or equal to max reward rate");
-    // 비율은 0보다 커야 함
-    require(_rate > 0, "Rate must be greater than 0");
-
+  function getUserTotalNodeCount(address _user) public view returns (uint256) {
     // 유저의 노드 정보 가져오기
-    UserToken[] memory userTokens = getUserNodeInfo(msg.sender);
+    UserToken[] memory userTokens = getUserNodeInfo(_user);
     uint256 userTotalNodeCount = 0;
 
     // 노드 총 개수 계산
     for (uint256 i = 0; i < userTokens.length; i++) {
       userTotalNodeCount += userTokens[i].amount;
     }
+    return userTotalNodeCount;
+  }
+
+  /**
+   * @notice 날짜(_yearMonth)와 비율(rate)을 등록
+   * @param _yearMonth 예: 202407
+   * @param _rate 등록할 비율 값
+   */
+  function registerRewardRate(uint256 _yearMonth, uint256 _rate) external {
+    // 이미 등록한 이력이 있거나 노드 보유를 하지 않았으면 등록불가
+    require(canRegisterRewardRate(_yearMonth, msg.sender), "Already registered");
+    // 비율은 최대 비율을 초과할 수 없음
+    require(_rate <= maxRewardRate, "Reward rate must be less than or equal to max reward rate");
+    // 비율은 0보다 커야 함
+    require(_rate > 0, "Rate must be greater than 0");
+
+    // 유저가 보유하고 있는 노드 총 개수 조회
+    uint256 userTotalNodeCount = getUserTotalNodeCount(msg.sender);
 
     // 유저는 최소 1개 이상의 노드를 보유해야 함
     require(userTotalNodeCount > 0, "Must have at least one node");
@@ -153,9 +173,16 @@ contract MiracleNodeRewardClaimRate is PermissionsEnumerable, Multicall, Contrac
       lastUpdateTime: block.timestamp
     });
 
-    // 실시간 평균 계산을 위한 누적값 업데이트
-    totalRewardRate[_yearMonth] += _rate * userTotalNodeCount;
-    totalNodeCount[_yearMonth] += userTotalNodeCount;
+    // 실시간 평균 계산을 위한 누적값 업데이트 (오버플로우 방지)
+    uint256 newTotalRewardRate = totalRewardRate[_yearMonth] + (_rate * userTotalNodeCount);
+    uint256 newTotalNodeCount = totalNodeCount[_yearMonth] + userTotalNodeCount;
+
+    // 오버플로우 체크
+    require(newTotalRewardRate >= totalRewardRate[_yearMonth], "Overflow in total reward rate");
+    require(newTotalNodeCount >= totalNodeCount[_yearMonth], "Overflow in total node count");
+
+    totalRewardRate[_yearMonth] = newTotalRewardRate;
+    totalNodeCount[_yearMonth] = newTotalNodeCount;
 
     registeredUsers[_yearMonth].push(msg.sender);
 
