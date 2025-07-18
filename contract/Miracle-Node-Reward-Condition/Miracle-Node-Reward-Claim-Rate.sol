@@ -164,9 +164,6 @@ contract MiracleNodeRewardClaimRate is PermissionsEnumerable, Multicall, Contrac
     // 유저가 보유하고 있는 노드 총 개수 조회
     uint256 userTotalNodeCount = getUserTotalNodeCount(msg.sender);
 
-    // 유저는 최소 1개 이상의 노드를 보유해야 함
-    require(userTotalNodeCount > 0, "Must have at least one node");
-
     rewardRateInfo[_yearMonth][msg.sender] = RewardRateInfo({
       rate: _rate,
       nodeCount: userTotalNodeCount,
