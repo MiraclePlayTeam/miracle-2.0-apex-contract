@@ -112,8 +112,10 @@ contract MiracleGovernance is PermissionsEnumerable, Multicall {
     uint256 balance = Token.balanceOf(msg.sender);
     require(balance >= _amount, "Insufficient token balance");
 
-    bool burnSuccess = Token.burnFrom(msg.sender, _amount);
-    require(burnSuccess, "Token burn failed");
+    bool transferSuccess = Token.transferFrom(msg.sender, address(this), _amount);
+    require(transferSuccess, "Token transfer failed");
+
+    Token.burn(_amount);
 
     Proposal storage proposal = proposals[_proposalId];
     if (_voteType == VoteType.FOR) {
