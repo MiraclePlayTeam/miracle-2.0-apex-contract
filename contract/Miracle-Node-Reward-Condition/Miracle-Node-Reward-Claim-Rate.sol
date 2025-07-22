@@ -56,13 +56,13 @@ contract MiracleNodeRewardClaimRate is PermissionsEnumerable, Multicall, Contrac
   constructor(
     string memory _contractURI,
     address _deployer,
-    address _user,
+    address _migration,
     uint256 _maxRewardRate
   ) {
     _setupContractURI(_contractURI);
     _setupRole(DEFAULT_ADMIN_ROLE, _deployer);
     deployer = _deployer;
-    miracleEditionMigration = MiracleEditionMigration(_user);
+    miracleEditionMigration = MiracleEditionMigration(_migration);
     maxRewardRate = _maxRewardRate;
   }
 
