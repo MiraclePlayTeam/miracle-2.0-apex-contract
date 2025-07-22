@@ -30,7 +30,8 @@ contract MiracleGovernance is PermissionsEnumerable, Multicall {
     UNKNOWN,
     PASSED,
     REJECTED,
-    TIED
+    TIED,
+    QUORUM_FAILED
   }
 
   struct Proposal {
@@ -112,8 +113,10 @@ contract MiracleGovernance is PermissionsEnumerable, Multicall {
     uint256 balance = Token.balanceOf(msg.sender);
     require(balance >= _amount, "Insufficient token balance");
 
-    bool burnSuccess = Token.burnFrom(msg.sender, _amount);
-    require(burnSuccess, "Token burn failed");
+    bool transferSuccess = Token.transferFrom(msg.sender, address(this), _amount);
+    require(transferSuccess, "Token transfer failed");
+
+    Token.burn(_amount);
 
     Proposal storage proposal = proposals[_proposalId];
     if (_voteType == VoteType.FOR) {
@@ -158,6 +161,17 @@ contract MiracleGovernance is PermissionsEnumerable, Multicall {
     Proposal storage proposal = proposals[_proposalId];
     require(proposal.isActive, "Proposal not active");
     require(block.timestamp > proposal.endTime, "Proposal not ended");
+
+    uint256 totalVotes = proposal.forVotes + proposal.againstVotes + proposal.neutralVotes;
+    uint256 totalSupply = Token.totalSupply();
+    uint256 quorum = totalSupply / 10;
+
+    if (totalVotes < quorum) {
+      proposal.result = ProposalResult.QUORUM_FAILED;
+      proposal.isActive = false;
+      emit ProposalEnded(_proposalId, msg.sender, proposal.result);
+      return;
+    }
 
     if (proposal.forVotes > proposal.againstVotes) {
       proposal.result = ProposalResult.PASSED;
