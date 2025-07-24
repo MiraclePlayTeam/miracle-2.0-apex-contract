@@ -47,6 +47,7 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
 
   event EscrowEvent(address indexed escrower, uint256 amount);
   event WithdrawEvent(address indexed escrower, uint256 amount);
+  event ForceWithdrawEvent(address indexed escrower, uint256 amount);
 
   constructor(
     string memory _contractURI,
@@ -154,6 +155,23 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     emit WithdrawEvent(msg.sender, withdrawAmount);
   }
 
+  function forceWithdrawAll() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    for (uint256 i = 0; i < escrowers.length; i++) {
+      address escrower = escrowers[i];
+      uint256 withdrawAmount = escrowings[escrower].escrowAmount;
+
+      escrowings[escrower].escrowAmount = 0;
+      if (escrowings[escrower].escrowAmount == 0) {
+        removeEscrower(escrower);
+      }
+      totalEscrowAmount -= withdrawAmount;
+
+      Token.transfer(escrower, withdrawAmount);
+
+      emit ForceWithdrawEvent(escrower, withdrawAmount);
+    }
+  }
+
   function getTotalEscrowAmount() external view returns (uint256) {
     return totalEscrowAmount;
   }
@@ -201,9 +219,7 @@ contract MiracleNodeMptEscrow is PermissionsEnumerable, Multicall, ContractMetad
     uint256 withdrawAmount = escrowings[_escrower].escrowAmount;
     uint256 timeSinceLastUpdate = block.timestamp - escrowings[_escrower].lastUpdateTime;
 
-    return
-      timeSinceLastUpdate >= lockTime &&
-      withdrawAmount > 0;
+    return timeSinceLastUpdate >= lockTime && withdrawAmount > 0;
   }
 
   function isAvailableEscrow(address _escrower) external view returns (bool) {
