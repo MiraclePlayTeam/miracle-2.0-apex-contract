@@ -15,10 +15,11 @@ interface IERC20 {
   function burnFrom(address account, uint256 amount) external returns (bool);
 }
 
-contract MiracleGovernance is PermissionsEnumerable, Multicall {
+contract MiracleGovernance is PermissionsEnumerable, Multicall, ContractMetadata {
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
   IERC20 public immutable Token;
+  address public deployer;
 
   enum VoteType {
     FOR,
@@ -61,9 +62,14 @@ contract MiracleGovernance is PermissionsEnumerable, Multicall {
   event ProposalForceCancelled(uint256 indexed proposalId, address admin);
   event ProposalEnded(uint256 indexed proposalId, address admin, ProposalResult result);
 
-  constructor(address _token) {
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    _setupRole(FACTORY_ROLE, msg.sender);
+  constructor(
+    string memory _contractURI,
+    address _deployer,
+    address _token
+  ) {
+    _setupContractURI(_contractURI);
+    _setupRole(DEFAULT_ADMIN_ROLE, _deployer);
+    _setupRole(FACTORY_ROLE, _deployer);
     Token = IERC20(_token);
   }
 
@@ -75,6 +81,10 @@ contract MiracleGovernance is PermissionsEnumerable, Multicall {
       "Not in proposal duration"
     );
     _;
+  }
+
+  function _canSetContractURI() internal view virtual override returns (bool) {
+    return msg.sender == deployer;
   }
 
   // Write Functions
