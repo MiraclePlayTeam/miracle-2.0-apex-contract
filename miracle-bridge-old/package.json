@@ -1,0 +1,53 @@
+{
+    "name": "mircale-brdige-contract",
+    "scripts": {
+        "has:role:avalanche": "hh run scripts/check-status-avalanche.js --network avalanche",
+        "has:role:polygon": "hh run scripts/check-status-polygon.js --network polygon",
+        "has:role:base": "hh run scripts/check-status-base.js --network base",
+        "has:role:opbnb": "hh run scripts/check-status-opbnb.js --network opbnb",
+        "has:role:arbi": "hh run scripts/check-status-arbitrum.js --network arbi",
+        "deploy:mumbai": "hh run scripts/deploy-mumbai.js --network mumbai",
+        "deploy:polygon": "hh run scripts/deploy-polygon.js --network polygon",
+        "deploy:avalanche": "hh run scripts/deploy-avalanche.js --network avalanche",
+        "deploy:base": "hh run scripts/deploy-base.js --network base",
+        "upgrade:polygon": "hh run scripts/upgrade-polygon.js --network polygon",
+        "upgrade:avalanche": "hh run scripts/upgrade-avalanche.js --network avalanche",
+        "mint:erc20:polygon": "hh run scripts/mint-erc20.js --network polygon",
+        "mint:erc20:avalanche": "hh run scripts/mint-erc20.js --network avalanche",
+        "mint:erc1155:polygon": "hh run scripts/mint-erc1155.js --network polygon",
+        "mint:erc1155:avalanche": "hh run scripts/mint-erc1155.js --network avalanche"
+    },
+    "dependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.2.3",
+        "chai-bn": "^0.3.1",
+        "dotenv": "^16.3.1",
+        "ethereum-waffle": "^4.0.10",
+        "hardhat": "^2.18.3",
+        "ts-node": "^10.9.1",
+        "web3": "^4.2.1",
+        "web3-utils": "^4.0.7"
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+        "@nomicfoundation/hardhat-ethers": "^3.0.0",
+        "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+        "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+        "@nomicfoundation/hardhat-verify": "^1.0.0",
+        "@openzeppelin/contracts": "^4.9.3",
+        "@openzeppelin/contracts-upgradeable": "^4.9.3",
+        "@thirdweb-dev/contracts": "3.15.0",
+        "@typechain/ethers-v6": "^0.4.0",
+        "@typechain/hardhat": "^8.0.0",
+        "chai": "^4.3.10",
+        "ethers": "^5.7.2",
+        "hardhat-gas-reporter": "^1.0.8",
+        "openzeppelin-solidity": "^3.4.2",
+        "seaport-types": "^1.6.3",
+        "solidity-coverage": "^0.8.0",
+        "typechain": "^8.1.0",
+        "typescript": "^5.2.2",
+        "erc721a-upgradeable": "^3.3.0",
+        "@thirdweb-dev/dynamic-contracts": "^1.2.4",
+        "solady": "0.0.180"
+    }
+}
