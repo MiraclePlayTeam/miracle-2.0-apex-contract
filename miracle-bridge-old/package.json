@@ -6,6 +6,7 @@
         "has:role:base": "hh run scripts/check-status-base.js --network base",
         "has:role:opbnb": "hh run scripts/check-status-opbnb.js --network opbnb",
         "has:role:arbi": "hh run scripts/check-status-arbitrum.js --network arbi",
+        "has:role:bnb": "hh run scripts/check-status-bnb.js --network bnb",
         "deploy:mumbai": "hh run scripts/deploy-mumbai.js --network mumbai",
         "deploy:polygon": "hh run scripts/deploy-polygon.js --network polygon",
         "deploy:avalanche": "hh run scripts/deploy-avalanche.js --network avalanche",
@@ -36,18 +37,18 @@
         "@openzeppelin/contracts": "^4.9.3",
         "@openzeppelin/contracts-upgradeable": "^4.9.3",
         "@thirdweb-dev/contracts": "3.15.0",
+        "@thirdweb-dev/dynamic-contracts": "^1.2.4",
         "@typechain/ethers-v6": "^0.4.0",
         "@typechain/hardhat": "^8.0.0",
         "chai": "^4.3.10",
+        "erc721a-upgradeable": "^3.3.0",
         "ethers": "^5.7.2",
         "hardhat-gas-reporter": "^1.0.8",
         "openzeppelin-solidity": "^3.4.2",
         "seaport-types": "^1.6.3",
+        "solady": "0.0.180",
         "solidity-coverage": "^0.8.0",
         "typechain": "^8.1.0",
-        "typescript": "^5.2.2",
-        "erc721a-upgradeable": "^3.3.0",
-        "@thirdweb-dev/dynamic-contracts": "^1.2.4",
-        "solady": "0.0.180"
+        "typescript": "^5.2.2"
     }
 }

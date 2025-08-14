@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-gas-reporter";
 import * as dotenv from "dotenv";
-import { HardhatUserConfig } from "hardhat/types";
+import { HardhatUserConfig } from "hardhat/config";
 dotenv.config({ path: __dirname + "/.env" });
 
 const OWNER_KEY = process.env.OWNER_KEY || "Test account's private key here";
@@ -83,6 +83,11 @@ const config: HardhatUserConfig = {
             gas: 20000000,
             gasPrice: 25000000000,
             accounts: [TEST_OWNER_KEY],
+        },
+        bnb: {
+            url: "https://bsc-dataseed.binance.org/", // BNB Chain의 RPC 엔드포인트
+            chainId: 56, // BNB Chain 체인 ID
+            accounts: [OWNER_KEY],
         },
     },
     gasReporter: {
