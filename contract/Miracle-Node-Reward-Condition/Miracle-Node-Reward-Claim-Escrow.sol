@@ -13,7 +13,6 @@ contract MiracleNodeRewardClaimEscrow is PermissionsEnumerable, Multicall, Contr
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
   address public deployer;
-  mapping(uint256 => uint256) public totalEscrowAmount;
 
   struct Escrower {
     uint256 month;
@@ -21,6 +20,7 @@ contract MiracleNodeRewardClaimEscrow is PermissionsEnumerable, Multicall, Contr
     uint256 lastUpdateTime;
   }
 
+  mapping(uint256 => uint256) public totalEscrowAmount;
   mapping(uint256 => mapping(address => uint256)) private escrowerIndex;
   mapping(uint256 => address[]) public escrowers;
   mapping(uint256 => mapping(address => Escrower)) public escrowings;
@@ -102,6 +102,7 @@ contract MiracleNodeRewardClaimEscrow is PermissionsEnumerable, Multicall, Contr
 
         (bool success, ) = payable(escrower).call{ value: withdrawAmount }("");
         require(success, "Transfer failed");
+
         emit WithdrawEvent(_month, escrower, withdrawAmount);
       }
     }
@@ -122,11 +123,8 @@ contract MiracleNodeRewardClaimEscrow is PermissionsEnumerable, Multicall, Contr
     return escrowers[_month].length;
   }
 
-  function getEscrower(uint256 _month, address _escrower) external view returns (uint256, uint256) {
-    return (
-      escrowings[_month][_escrower].escrowAmount,
-      escrowings[_month][_escrower].lastUpdateTime
-    );
+  function getEscrower(uint256 _month, address _escrower) external view returns (Escrower memory) {
+    return escrowings[_month][_escrower];
   }
 
   function getEscrowAmount(uint256 _month, address _escrower) external view returns (uint256) {
