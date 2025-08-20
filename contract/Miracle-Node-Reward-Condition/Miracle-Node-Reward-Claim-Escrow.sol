@@ -9,7 +9,7 @@ import "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
 // @author Miracle
 // @notice This contract is used to escrow native tokens (ETH, MATIC, etc.) and reward condition
 // @CreatedAt 2025-07-16
-contract MiracleRewardClaimEscrow is PermissionsEnumerable, Multicall, ContractMetadata {
+contract MiracleNodeRewardClaimEscrow is PermissionsEnumerable, Multicall, ContractMetadata {
   bytes32 public constant FACTORY_ROLE = keccak256("FACTORY_ROLE");
 
   address public deployer;
