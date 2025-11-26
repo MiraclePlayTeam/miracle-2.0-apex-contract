@@ -3,8 +3,10 @@ pragma solidity ^0.8.26;
 
 import "@thirdweb-dev/contracts/extension/PermissionsEnumerable.sol";
 import "@thirdweb-dev/contracts/extension/Multicall.sol";
+import "@thirdweb-dev/contracts/extension/ContractMetadata.sol";
 
-contract NativeTokenMultiSend is PermissionsEnumerable, Multicall {
+contract NativeTokenMultiSend is PermissionsEnumerable, Multicall, ContractMetadata {
+    address public deployer;
 
     event TokensDistributed(
         address[] recipients, 
@@ -19,8 +21,14 @@ contract NativeTokenMultiSend is PermissionsEnumerable, Multicall {
         uint256 timestamp
     );
 
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    constructor(string memory _contractURI, address _deployer) {
+        _setupContractURI(_contractURI);
+        _setupRole(DEFAULT_ADMIN_ROLE, _deployer);
+        deployer = _deployer;
+    }
+
+    function _canSetContractURI() internal view virtual override returns (bool) {
+        return msg.sender == deployer;
     }
     
     /**
