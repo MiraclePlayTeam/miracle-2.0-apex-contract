@@ -6,13 +6,26 @@ const sourcePath = process.env.SOURCE_PATH || "./contract";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.23",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 100
+    compilers: [
+      {
+        version: "0.8.23",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 100
+          }
+        }
+      },
+      {
+        version: "0.8.26",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 100
+          }
+        }
       }
-    }
+    ]
   },
   paths: {
     sources: sourcePath,
